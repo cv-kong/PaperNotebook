@@ -121,5 +121,8 @@
 ```
 矩阵：\begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}
 
-
+## 7.改变字体颜色
+```
+红色：\textcolor{red}{红色字体}
+```
 
