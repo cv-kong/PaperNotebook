@@ -33,7 +33,7 @@
 - 链接： https://docs.ultralytics.com/zh/models/yolo12/#overview
 - YOLOV12 使用Area attention；更大感受野，更小计算量
 - 常规的融合算法，都只强调算法效果，未强调性能。目前Unet和Ufuser结构，效率上差。https://zhuanlan.zhihu.com/p/24876772668
-![效率](images\注意力机制效率问题.png)
+![效率](images//注意力机制效率问题.png)
 
 - 论文使用多头注意力机制提取全局特征 https://zhuanlan.zhihu.com/p/647747759、https://zhuanlan.zhihu.com/p/509582087
 
