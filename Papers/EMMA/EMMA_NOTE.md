@@ -17,11 +17,11 @@
 - 通过伪感知模块和感知损失分量有效地模拟感知成像过程，改进了传统融合损失中对融合图像和源输入之间域差异的不恰当处理。
 - 提出的U - Fuser融合模块熟练地建模跨多个尺度的长、短程依赖关系来整合源信息。
 - 方法在红外-可见光图像融合和医学图像融合中表现出优异的性能，这也被证明有利于下游的多模态目标检测和语义分割任务。
-- 作者用15个顶会融合后的数据作为GT，训练Ai，Av；因为图像输入输出有相同的size，所有选用unet；<font color="red">如果有不同的size呢</font>
+- 作者用15个顶会融合后的数据作为GT，训练Ai，Av；因为图像输入输出有相同的size，所有选用unet；<font color="red">如果有不同的size呢？</font>
 # 个人想法
 
 - 先用一个预训练的模型来求解特征，预训练模型用的unet，该模型提取特征效果不是最佳，并且推理速度慢；
-- unet训练出来的特征，并不能完美的模拟出真实传感器分布。替换成最新的backbone效果更好；<font color="red">打印出改进前和改进后的特征图</font>
+- unet需要图像输入输出有相同的size，训练出来的特征，并不能完美的模拟出真实传感器分布。替换成最新的backbone效果更好；<font color="red">打印出改进前和改进后的特征图</font>
 
 - UNet进行图像融合，可替换Unet的模块，参考mmsegementation中的模型；替换理由为替换模型设计的优势以及为什么设计。https://github.com/open-mmlab/mmsegmentation
 
@@ -52,3 +52,12 @@
 
 # 创新
 - propose a simple yet efficient area attention module(A2), which maintains a large receptive field while reducing the computational complexity of attention in a very simple way, thus enhancing speed.
+
+
+
+# 摘要
+
+- <font color="red">在别人基础下改进，摘要怎么描述???</font>
+红外可见光图像，缺乏GT图像，主流且有效使用自监督方式进行融合。但该方法在特征提取和弱光照条件下，效果不佳。针对以上问题，我们提出了如下方法，一种基于自监督学习的新型融合方法，通过伪感知模块和感知损失分量有效地模拟感知成像过程，改进了传统融合损失中对融合图像和源输入之间域差异的不恰当处理。
+
+红外可见光图像融合，缺乏有效的GT图像，导致模型训练困难。RGB和灰度图之间的转换，导致融合图像的质量下降。
