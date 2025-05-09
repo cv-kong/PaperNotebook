@@ -58,6 +58,121 @@
 # 摘要
 
 - <font color="red">在别人基础下改进，摘要怎么描述???</font>
-红外可见光图像，缺乏GT图像，主流且有效使用自监督方式进行融合。但该方法在特征提取和弱光照条件下，效果不佳。针对以上问题，我们提出了如下方法，一种基于自监督学习的新型融合方法，通过伪感知模块和感知损失分量有效地模拟感知成像过程，改进了传统融合损失中对融合图像和源输入之间域差异的不恰当处理。
+红外可见光图像，缺乏GT图像，主流且有效使用自监督方式进行融合。但该方法在特征提取和弱光照条件下，效果不佳,并且RGB和灰度图之间的转换会存在问题？？？。针对以上问题，我们在已有EMMA框架下改进，引入轻量级高效backbone，替换传统的Unet，解决输入尺度不同问题，并且强化特征提取；改进了伪感知模块，在I图像和V图像分策略优化，V图像进行增强特征提取，I图像简单特征提取；融合模块设计了混合注意力机制，加强特征提取一种基于自监督学习的新型融合方法；实验表明，该方法在红外可见光图像融合任务上取得了良好的效果。
 
-红外可见光图像融合，缺乏有效的GT图像，导致模型训练困难。RGB和灰度图之间的转换，导致融合图像的质量下降。
+# 介绍
+- 介绍红外可见光图像融合的重要性，以及目前存在的问题
+- 介绍EMMA框架，以及其存在的问题
+  - V图像是RGB图像，存在光照问题，需要增强
+
+# 动态非线性亮度映射（Dynamic Non-linear Lightness Mapping, DNLM）
+
+## 1. 核心原理
+
+### 1.1 动态参数化S形曲线
+亮度变换公式：
+$$ I_{out}(x,y) = \frac{1}{1 + e^{-k(x,y) \cdot (I_{in}(x,y) - \tau(x,y))}} $$
+
+参数定义：
+- $k(x,y)$：曲线陡峭度
+  $$ k(x,y) = \alpha \cdot \frac{\sigma(x,y)}{\mu(x,y) + \epsilon} + \beta $$
+- $\tau(x,y)$：动态阈值
+  $$ \tau(x,y) = \gamma \cdot \mu(x,y) + \delta $$
+
+### 1.2 语义引导约束
+语义掩膜修正：
+$$ k'(x,y) = k(x,y) \cdot (1 - \lambda \cdot S(x,y)) $$
+
+## 2. 实现步骤
+
+1. **局部统计计算**
+   - 使用$15\times15$邻窗
+   - 积分图加速
+
+2. **曲线参数预测**
+   - 轻量级CNN/LUT
+   - 超网络动态生成
+
+3. **像素级映射**
+   - 逐像素S形变换
+   - 导向滤波后处理
+
+## 3. 优势对比
+
+| 特性               | DNLM                          | 传统方法          |
+|--------------------|-------------------------------|------------------|
+| 自适应能力         | 像素级动态调整               | 全局固定参数      |
+| 语义感知           | 支持区域抑制                | 无区分           |
+| 计算效率           | 实时处理4K                  | 通常更快         |
+
+
+  - EMMA中，存在伪感知模块backbone,Unet通过特征图可视化可知，细节特征提取的不佳；选用优化后的backbone，效果更好
+
+# UNet作为Backbone的局限性及新型Backbone设计思路
+
+## UNet的核心缺陷
+
+### 1. 计算效率问题
+- 对称编解码结构带来大量冗余计算
+- 跳跃连接导致特征图尺寸频繁变化，内存访问效率低
+- 浅层特征重复传递增加显存消耗
+
+### 2. 特征融合瓶颈
+- 简单的通道拼接(concat)操作限制多尺度特征交互
+- 缺乏跨尺度注意力机制
+- 深层语义信息与浅层细节融合不充分
+
+### 3. 感受野局限
+- 标准卷积核难以捕获长程依赖
+- 下采样策略导致空间信息不可逆损失
+- 对超大尺寸器官(如肝脏)分割效果下降
+
+### 4. 动态适应性不足
+- 固定网络结构难以适应不同模态数据
+- 缺乏对病灶形状变化的鲁棒性处理
+
+---
+
+## 创新Backbone设计原则
+
+### 1. 异构图灵架构
+```python
+class HeteroBlock(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+        self.branch1 = nn.Sequential(
+            DepthwiseSepConv(in_c, out_c//2),
+            ChannelAttention(out_c//2))
+        self.branch2 = nn.Sequential(
+            DilatedConv(in_c, out_c//4, dilation=3),
+            SpatialAttention())
+        self.branch3 = nn.Identity() if in_c==out_c else Conv1x1(in_c, out_c-out_c//2-out_c//4)
+        
+    def forward(self, x):
+        return torch.cat([self.branch1(x), 
+                        self.branch2(x),
+                        self.branch3(x)], dim=1)
+```
+### 2. 多尺度感知模块
+```python
+class MSAP(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.scales = nn.ModuleList([
+            nn.AvgPool2d(2**i, 2**i) for i in range(4)])
+        self.fuse = nn.Conv2d(channels*4, channels, 1)
+        
+    def forward(self, x):
+        feats = [F.interpolate(s(x), x.shape[2:]) for s in self.scales]
+        return self.fuse(torch.cat(feats, dim=1))
+```
+  - EMMA中Uf模块，存在特征提取不足，无法提取到目标的完整信息
+
+
+- 介绍本文的创新点，以及改进后的EMMA框架
+- 介绍实验结果，以及与其他方法的对比
+
+# 相关工作
+
+- 介绍EMMA框架，以及其存在的问题
+- 介绍其他红外可见光图像融合方法，以及存在的问题
