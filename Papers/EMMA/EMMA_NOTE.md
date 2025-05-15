@@ -106,7 +106,7 @@ $$ k'(x,y) = k(x,y) \cdot (1 - \lambda \cdot S(x,y)) $$
 | 计算效率           | 实时处理4K                  | 通常更快         |
 
 
-  - EMMA中，存在伪感知模块backbone,Unet通过特征图可视化可知，细节特征提取的不佳；选用优化后的backbone，效果更好
+- EMMA中，存在伪感知模块backbone,Unet通过特征图可视化可知，细节特征提取的不佳；选用优化后的backbone，效果更好
 
 # UNet作为Backbone的局限性及新型Backbone设计思路
 
@@ -125,7 +125,7 @@ $$ k'(x,y) = k(x,y) \cdot (1 - \lambda \cdot S(x,y)) $$
 ### 3. 感受野局限
 - 标准卷积核难以捕获长程依赖
 - 下采样策略导致空间信息不可逆损失
-- 对超大尺寸器官(如肝脏)分割效果下降
+- 对超大尺寸对象分割效果下降
 
 ### 4. 动态适应性不足
 - 固定网络结构难以适应不同模态数据
@@ -166,13 +166,17 @@ class MSAP(nn.Module):
         feats = [F.interpolate(s(x), x.shape[2:]) for s in self.scales]
         return self.fuse(torch.cat(feats, dim=1))
 ```
-  - EMMA中Uf模块，存在特征提取不足，无法提取到目标的完整信息
+
+- EMMA中Uf模块以Unet为结构，将Restormer做为基础模块；参考上述unet替换的改进结构；
+https://blog.csdn.net/u012863603/article/details/142977809
+改进选用C2PSA它结合了PSA(Pointwise Spatial Attention)块，用于增强特征提取和注意力机制<font color="green">yoloV11</font>
+![C2PSA](images//C2PSA.png)
 
 
-- 介绍本文的创新点，以及改进后的EMMA框架
+
 - 介绍实验结果，以及与其他方法的对比
 
 # 相关工作
 
 - 介绍EMMA框架，以及其存在的问题
-- 介绍其他红外可见光图像融合方法，以及存在的问题
+- 介绍其他红外可见光图像融合方法，以及存在的问
