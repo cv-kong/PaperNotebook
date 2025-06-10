@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.11.1.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*DroneVehical数据集，图像融合</c>
+<c></c>
+<c></c>
+<l>data_dir := 'E:/博士相关/大论文_红外遥感/数据集/DroneVehical/DroneVehical_yolo/'</l>
+<c></c>
+<l>I_data := data_dir + 'irimg/images/train'</l>
+<l>V_data := data_dir + 'valimg/images/train'</l>
+<c></c>
+<c></c>
+<l>list_image_files (V_data, 'default', [], irImageFiles)</l>
+<l>list_image_files (I_data, 'default', [], valImageFiles)</l>
+<c></c>
+<l>for Index := 0 to |irImageFiles|-1 by 1</l>
+<l>    read_image (irImage, irImageFiles[Index])</l>
+<l>    read_image (vaImage, valImageFiles[Index])</l>
+<c>    </c>
+<c>    </c>
+<l>    add_image (irImage, vaImage, ImageResult, 0.5, 0)</l>
+<l>endfor</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
