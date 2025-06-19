@@ -14,18 +14,26 @@
 <c></c>
 <c></c>
 <c></c>
-<l>list_image_files (V_data, 'default', [], irImageFiles)</l>
-<l>list_image_files (I_data, 'default', [], valImageFiles)</l>
+<l>list_image_files (I_data, 'default', [], irImageFiles)</l>
+<l>list_image_files (V_data, 'default', [], valImageFiles)</l>
 <c></c>
 <l>for Index := 0 to |irImageFiles|-1 by 1</l>
 <l>    read_image (irImage, irImageFiles[Index])</l>
 <l>    read_image (vaImage, valImageFiles[Index])</l>
 <c>    </c>
+<l>    decompose3 (vaImage, Image_red, Image_green, Image_blue)</l>
+<l>    rgb1_to_gray (irImage, irImage_gray)</l>
+<c>    </c>
+<l>    compose3 (irImage_gray, Image_green, Image_blue, MultiChannelImage)</l>
+<l>    compose4 (irImage_gray, Image_red, Image_green, Image_blue, MultiChannelImage1)</l>
+<c>    </c>
 <c>    * 直接固定权重相加</c>
 <l>    add_image (irImage, vaImage, ImageAdd, 0.5, 0)</l>
 <c>    </c>
+<l>    illuminate (vaImage, ImageIlluminate, 11, 11, 0.2)</l>
 <c>    </c>
-<c></c>
+<l>    dev_display (ImageAdd)</l>
+<l>    stop ()</l>
 <l>endfor</l>
 <c></c>
 <c></c>
@@ -41,10 +49,25 @@
 <l>entropy_gray (Image, ImageAdd, Entropy, Anisotropy)</l>
 <c></c>
 <c></c>
-<c>**2、</c>
+<c>**2、average gradient(AG) 平均梯度   和Tenegrad函数法类似</c>
+<l>sobel_amp (Image, EdgeAmplitude, 'sum_sqrt', 3)</l>
+<l>min_max_gray(EdgeAmplitude, EdgeAmplitude, 0, Min, Max, Range)</l>
+<l>threshold(EdgeAmplitude, Region1, 11.8, 255)</l>
+<l>region_to_bin(Region1, BinImage, 1, 0, Width, Height)</l>
+<l>mult_image(EdgeAmplitude, BinImage, ImageResult4, 1, 0)</l>
+<l>mult_image(ImageResult4, ImageResult4, ImageResult, 1, 0)</l>
+<l>intensity(ImageResult, ImageResult, Value, Deviation)</l>
+<c></c>
+<c>**3、 standard deviation (SD)方差法</c>
+<l>region_to_mean (Image, Image, ImageMean) </l>
+<l>convert_image_type (ImageMean, ImageMean, 'real')</l>
+<l>convert_image_type (Image, Image, 'real') </l>
+<l>sub_image(Image, ImageMean, ImageSub, 1, 0)</l>
+<l>mult_image(ImageSub, ImageSub, ImageResult, 1, 0)</l>
+<l>intensity(ImageResult, ImageResult, Value, Deviation) </l>
 <c></c>
 <l>if(Method = 'Deviation')</l>
-<c>*方差法  standard deviation (SD)</c>
+<c>    *方差法  standard deviation (SD)</c>
 <l>    region_to_mean (Image, Image, ImageMean) </l>
 <l>    convert_image_type (ImageMean, ImageMean, 'real')</l>
 <l>    convert_image_type (Image, Image, 'real') </l>
@@ -53,7 +76,7 @@
 <l>    intensity(ImageResult, ImageResult, Value, Deviation) </l>
 <c>    </c>
 <l>elseif(Method = 'laplace')</l>
-<c>*拉普拉斯能量函数</c>
+<c>    *拉普拉斯能量函数</c>
 <l>    laplace (Image, ImageLaplace4, 'signed', 3, 'n_4')</l>
 <l>    laplace (Image, ImageLaplace8, 'signed', 3, 'n_8')</l>
 <l>    add_image(ImageLaplace4,ImageLaplace4,ImageResult1, 1, 0)</l>
@@ -61,9 +84,9 @@
 <l>    add_image(ImageLaplace8,ImageResult1,ImageResult1, 1, 0)</l>
 <l>    mult_image(ImageResult1, ImageResult1, ImageResult, 1, 0)</l>
 <l>    intensity(ImageResult, ImageResult, Value, Deviation)</l>
-<c></c>
+<c>    </c>
 <l>elseif(Method = 'energy')</l>
-<c>*能量梯度函数</c>
+<c>    *能量梯度函数</c>
 <l>    crop_part(Image, ImagePart00, 0, 0, Width-1, Height-1)</l>
 <l>    crop_part(Image, ImagePart01, 0, 1, Width-1, Height-1)</l>
 <l>    crop_part(Image, ImagePart10, 1, 0, Width-1, Height-1)</l>
@@ -77,7 +100,7 @@
 <l>    add_image(ImageResult1, ImageResult2, ImageResult, 1, 0)    </l>
 <l>    intensity(ImageResult, ImageResult, Value, Deviation)</l>
 <l>elseif(Method = 'Brenner')</l>
-<c>*Brenner函数法</c>
+<c>    *Brenner函数法</c>
 <l>    crop_part(Image, ImagePart00, 0, 0, Width, Height-2)</l>
 <l>    convert_image_type (ImagePart00, ImagePart00, 'real')</l>
 <l>    crop_part(Image, ImagePart20, 2, 0, Width, Height-2)</l>
@@ -86,7 +109,7 @@
 <l>    mult_image(ImageSub, ImageSub, ImageResult, 1, 0)</l>
 <l>    intensity(ImageResult, ImageResult, Value, Deviation)</l>
 <l>elseif(Method = 'Tenegrad')</l>
-<c>*Tenegrad函数法</c>
+<c>    *Tenegrad函数法</c>
 <l>    sobel_amp (Image, EdgeAmplitude, 'sum_sqrt', 3)</l>
 <l>    min_max_gray(EdgeAmplitude, EdgeAmplitude, 0, Min, Max, Range)</l>
 <l>    threshold(EdgeAmplitude, Region1, 11.8, 255)</l>
@@ -94,9 +117,9 @@
 <l>    mult_image(EdgeAmplitude, BinImage, ImageResult4, 1, 0)</l>
 <l>    mult_image(ImageResult4, ImageResult4, ImageResult, 1, 0)</l>
 <l>    intensity(ImageResult, ImageResult, Value, Deviation)</l>
-<c>   </c>
+<c>    </c>
 <l>elseif(Method = '2')</l>
-<c></c>
+<c>    </c>
 <l>elseif(Method = '3')</l>
 <c>    </c>
 <l>endif</l>

@@ -1,5 +1,6 @@
 
 \documentclass[journal]{IEEEtran}
+\usepackage{xeCJK}
 
 
 \ifCLASSINFOpdf
@@ -17,9 +18,9 @@
 \usepackage[sorting=none]{biblatex}
 \usepackage{booktabs} % 表格
 
+\usepackage{fontspec} % 字体
+
 \usepackage{float}  %引入float宏包
-
-
 \usepackage{bm} % 加黑
 
 
@@ -40,8 +41,7 @@
 
 %摘要
 \begin{abstract}
-Infrared remote sensing images, captured from significant distances, often exhibit low spatial resolution and contain small abnormal objects. Despite the impressive performance and efficiency of CNN-based infrared image target detection methods, they struggle with detecting such tiny targets. The conventional label assignment strategy is inadequate for this task, and the low spatial resolution results in the loss of small target information, making it difficult for the standard detection head to identify these targets. Consequently, accurate detection of small targets remains a challenge. a new model is put forward for small object detection in remote-sensing infrared images, incorporating an enhanced label assignment strategy. To do this, we first present a matching-based label assignment strategy, aimed at improving the precision of small target label assignments. This strategy facilitates the learning of small target positive samples and enhances localization accuracy. Subsequently, we devise a prediction head structure with high spatial resolution to facilitate the detecting rate of small objects. Ultimately, our model was assessed comprehensively using the SISRT-V2 and the results obtained are promising. This innovative approach paves the way for more precise and effective small object detection in the domain of infrared remote sensing images.
-
+aa
 \end{abstract}
 
 % 关键字
