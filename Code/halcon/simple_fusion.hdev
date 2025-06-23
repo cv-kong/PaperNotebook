@@ -25,7 +25,7 @@
 <l>    rgb1_to_gray (irImage, irImage_gray)</l>
 <c>    </c>
 <l>    compose3 (irImage_gray, Image_green, Image_blue, MultiChannelImage)</l>
-<l>    compose4 (irImage_gray, Image_red, Image_green, Image_blue, MultiChannelImage1)</l>
+<l>    compose4 ( Image_red, Image_green, Image_blue, irImage_gray,MultiChannelImage1)</l>
 <c>    </c>
 <c>    * 直接固定权重相加</c>
 <l>    add_image (irImage, vaImage, ImageAdd, 0.5, 0)</l>
