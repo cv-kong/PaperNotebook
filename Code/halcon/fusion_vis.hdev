@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.11.1.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>* 图像融合，实验结果可视化</c>
+<l>dir_img := '../../Dataset/DroneVehical/'</l>
+<l>result_path := dir_img + 'Vis/'</l>
+<c></c>
+<l>ir_path := dir_img + 'irimg/'</l>
+<l>valimg_path := dir_img + 'valimg/'</l>
+<c></c>
+<l>dev_close_window ()</l>
+<l>list_image_files (ir_path, 'default', [], ImageFiles)</l>
+<l>read_image (Image, ImageFiles[0])</l>
+<l>dev_open_window_fit_image (Image, 0, 0, -1, -1, WindowHandle)</l>
+<c></c>
+<l>try</l>
+<l>    make_dir (result_path)</l>
+<l>catch (Exception)</l>
+<l>endtry</l>
+<l>dev_set_draw ('margin')</l>
+<l>dev_set_color ('red')</l>
+<c></c>
+<c></c>
+<l>for Index := 0 to 100 by 1</l>
+<l>    tuple_split (ImageFiles[Index], '/', Substrings)</l>
+<l>    tuple_split (Substrings[|Substrings|-1], '.', Sub2)</l>
+<c>    </c>
+<l>    save_file_name := result_path + Sub2[0]</l>
+<l>    try</l>
+<l>        make_dir (save_file_name)</l>
+<l>    catch (Exception)</l>
+<l>    endtry</l>
+<c>    * 读取原图</c>
+<l>    read_image (valImage, valimg_path + Substrings[|Substrings|-1])</l>
+<l>    read_image (irImage, ImageFiles[Index])</l>
+<c>    </c>
+<l>    dev_clear_window ()</l>
+<l>    dev_display (irImage)</l>
+<l>    get_image_size (irImage, Width, Height)</l>
+<l>    draw_rectangle1 (WindowHandle, Row1, Column1, Row2, Column2)</l>
+<l>    gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
+<c>    </c>
+<c>    * 保存红外原图数据</c>
+<l>    save_vis_images (irImage, Rectangle, WindowHandle, save_file_name, 'ir_oringnal')</l>
+<c>    </c>
+<l>    save_vis_images (valImage, Rectangle, WindowHandle, save_file_name, 'val_oringnal')</l>
+<l>    stop ()</l>
+<c>    </c>
+<l>endfor</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="make_yolov5_path">
+<interface>
+<ic>
+<par name="result_path" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<c>* 生成 yolov5 数据集路径</c>
+<l>images_path_train := result_path+'/images/train'</l>
+<l>labels_path_train := result_path+'/labels/train'</l>
+<l>images_path_val := result_path+'/images/val'</l>
+<l>labels_path_val := result_path+'/labels/val'</l>
+<c></c>
+<l>try</l>
+<l>    make_dir (result_path)</l>
+<l>    make_dir (result_path+'/images')</l>
+<l>    make_dir (result_path+'/labels')</l>
+<c></c>
+<l>catch (except)</l>
+<c></c>
+<l>endtry</l>
+<c></c>
+<l>try</l>
+<c></c>
+<l>    make_dir (images_path_train)</l>
+<l>    make_dir (labels_path_train)</l>
+<l>    make_dir (images_path_val)</l>
+<l>    make_dir (labels_path_val)</l>
+<l>catch (except)</l>
+<l>    return ()</l>
+<l>endtry</l>
+<c></c>
+</body>
+<docu id="make_yolov5_path">
+<parameters>
+<parameter id="result_path"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="save_vis_images">
+<interface>
+<io>
+<par name="Image_or" base_type="iconic" dimension="0"/>
+<par name="Rectangle" base_type="iconic" dimension="0"/>
+</io>
+<ic>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+<par name="save_file_name" base_type="ctrl" dimension="0"/>
+<par name="name" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>reduce_domain (Image_or, Rectangle, ImageReduced)</l>
+<l>crop_domain (ImageReduced, ImagePart)</l>
+<l>dev_clear_window ()</l>
+<l>dev_display (Image_or)</l>
+<l>dev_set_color ('blue')</l>
+<l>dev_set_line_width (3)</l>
+<l>dev_display (Rectangle)</l>
+<l>dump_window_image (Image, WindowHandle)</l>
+<l>write_image (ImagePart, 'jpg', 0, save_file_name + '/' + name + '_part')</l>
+<l>write_image (Image, 'jpg', 0, save_file_name + '/' + name)</l>
+<l>return ()</l>
+</body>
+<docu id="save_vis_images">
+<parameters>
+<parameter id="Image_or"/>
+<parameter id="Rectangle"/>
+<parameter id="WindowHandle"/>
+<parameter id="name"/>
+<parameter id="save_file_name"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>
