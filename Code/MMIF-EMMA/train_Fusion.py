@@ -60,7 +60,7 @@ for epoch in range(num_epochs):
     for i, (data_IR, data_VIS, index) in enumerate(trainloader):
         data_VIS, data_IR = data_VIS.cuda(), data_IR.cuda()
         F=model(data_IR,data_VIS)  # F
-        Ft = tran.apply(F)
+        Ft = tran.apply(F) # 帮助收敛用的，
         Ft_caret= model(F2Imodel(Ft),F2Vmodel(Ft)) # Ft_caret
         optimizer.zero_grad()
         loss_total=loss(F2Vmodel(F),data_VIS)+loss(F2Imodel(F),data_IR)+alpha*loss(Ft,Ft_caret)

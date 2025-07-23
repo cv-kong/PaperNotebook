@@ -44,8 +44,13 @@
 <c>    </c>
 <c>    * 保存红外原图数据</c>
 <l>    save_vis_images (irImage, Rectangle, WindowHandle, save_file_name, 'ir_oringnal')</l>
-<c>    </c>
 <l>    save_vis_images (valImage, Rectangle, WindowHandle, save_file_name, 'val_oringnal')</l>
+<c>    </c>
+<c>    </c>
+<c>    * 图像融合后效果</c>
+<l>    add_image (irImage, valImage, ImageAdd, 0.5, 0)</l>
+<l>    save_vis_images (ImageAdd, Rectangle, WindowHandle, save_file_name, 'simple_fusion')</l>
+<c>    </c>
 <l>    stop ()</l>
 <c>    </c>
 <l>endfor</l>
