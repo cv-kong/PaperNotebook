@@ -46,6 +46,20 @@
 <l>    save_vis_images (irImage, Rectangle, WindowHandle, save_file_name, 'ir_oringnal')</l>
 <c>    </c>
 <l>    save_vis_images (valImage, Rectangle, WindowHandle, save_file_name, 'val_oringnal')</l>
+<c>    </c>
+<c>        * 预处理1</c>
+<l>    ratio :=0.05</l>
+<c>    </c>
+<l>    for Index1 := 1 to 7 by 1</l>
+<c>        </c>
+<l>        add_image (irImage, valImage, ImageResult, ratio*Index1, 0)</l>
+<l>        save_vis_images (ImageResult, Rectangle, WindowHandle, save_file_name, 'result_' + ratio*Index1)</l>
+<c>        </c>
+<l>    endfor</l>
+<c>    </c>
+<c>        * 预处理1</c>
+<c>    </c>
+<c></c>
 <l>    stop ()</l>
 <c>    </c>
 <l>endfor</l>
