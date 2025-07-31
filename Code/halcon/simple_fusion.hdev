@@ -24,9 +24,14 @@
 <l>    decompose3 (vaImage, Image_red, Image_green, Image_blue)</l>
 <l>    rgb1_to_gray (irImage, irImage_gray)</l>
 <c>    </c>
-<l>    compose3 (irImage_gray, Image_green, Image_blue, MultiChannelImage)</l>
-<l>    compose4 (irImage_gray, Image_red, Image_green, Image_blue, MultiChannelImage1)</l>
 <c>    </c>
+<l>    trans_from_rgb (Image_red, Image_green, Image_blue, Hue, Saturation, Intensity, 'hsv')</l>
+<c>    </c>
+<l>    trans_to_rgb (Hue, Saturation, irImage, ImageRed, ImageGreen, ImageBlue, 'hsv')</l>
+<c>    </c>
+<c>    </c>
+<l>    compose3 (ImageRed, ImageGreen, ImageBlue, MultiChannelImage)</l>
+<c></c>
 <c>    * 直接固定权重相加</c>
 <l>    add_image (irImage, vaImage, ImageAdd, 0.5, 0)</l>
 <c>    </c>

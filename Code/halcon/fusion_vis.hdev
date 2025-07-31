@@ -46,11 +46,27 @@
 <l>    save_vis_images (irImage, Rectangle, WindowHandle, save_file_name, 'ir_oringnal')</l>
 <l>    save_vis_images (valImage, Rectangle, WindowHandle, save_file_name, 'val_oringnal')</l>
 <c>    </c>
+<<<<<<< HEAD
 <c>    </c>
 <c>    * 图像融合后效果</c>
 <l>    add_image (irImage, valImage, ImageAdd, 0.5, 0)</l>
 <l>    save_vis_images (ImageAdd, Rectangle, WindowHandle, save_file_name, 'simple_fusion')</l>
 <c>    </c>
+=======
+<c>        * 预处理1</c>
+<l>    ratio :=0.05</l>
+<c>    </c>
+<l>    for Index1 := 1 to 7 by 1</l>
+<c>        </c>
+<l>        add_image (irImage, valImage, ImageResult, ratio*Index1, 0)</l>
+<l>        save_vis_images (ImageResult, Rectangle, WindowHandle, save_file_name, 'result_' + ratio*Index1)</l>
+<c>        </c>
+<l>    endfor</l>
+<c>    </c>
+<c>        * 预处理1</c>
+<c>    </c>
+<c></c>
+>>>>>>> d94947bb5fec2c21aca5f15236b7b3aafba2acf9
 <l>    stop ()</l>
 <c>    </c>
 <l>endfor</l>
