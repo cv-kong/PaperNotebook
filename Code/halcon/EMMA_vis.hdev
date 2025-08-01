@@ -4,56 +4,28 @@
 <interface/>
 <body>
 <c>* 图像融合，实验结果可视化</c>
-<l>dir_img := '../../Dataset/DroneVehical/'</l>
-<l>result_path := dir_img + 'Vis/'</l>
-<c></c>
-<l>ir_path := dir_img + 'irimg/'</l>
-<l>valimg_path := dir_img + 'valimg/'</l>
-<c></c>
-<l>dev_close_window ()</l>
-<l>list_image_files (ir_path, 'default', [], ImageFiles)</l>
-<l>read_image (Image, ImageFiles[0])</l>
-<l>dev_open_window_fit_image (Image, 0, 0, -1, -1, WindowHandle)</l>
-<c></c>
-<l>try</l>
-<l>    make_dir (result_path)</l>
-<l>catch (Exception)</l>
-<l>endtry</l>
-<l>dev_set_draw ('margin')</l>
-<l>dev_set_color ('red')</l>
+<l>dir_img := '../../Papers/ImageFusion/images/'</l>
 <c></c>
 <c></c>
-<l>for Index := 0 to 100 by 1</l>
-<l>    tuple_split (ImageFiles[Index], '/', Substrings)</l>
-<l>    tuple_split (Substrings[|Substrings|-1], '.', Sub2)</l>
-<c>    </c>
-<l>    save_file_name := result_path + Sub2[0]</l>
-<l>    try</l>
-<l>        make_dir (save_file_name)</l>
-<l>    catch (Exception)</l>
-<l>    endtry</l>
-<c>    * 读取原图</c>
-<l>    read_image (valImage, valimg_path + Substrings[|Substrings|-1])</l>
-<l>    read_image (irImage, ImageFiles[Index])</l>
-<c>    </c>
-<l>    dev_clear_window ()</l>
-<l>    dev_display (irImage)</l>
-<l>    get_image_size (irImage, Width, Height)</l>
-<l>    draw_rectangle1 (WindowHandle, Row1, Column1, Row2, Column2)</l>
-<l>    gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
-<c>    </c>
-<c>    * 保存红外原图数据</c>
-<l>    save_vis_images (irImage, Rectangle, WindowHandle, save_file_name, 'ir_oringnal')</l>
-<l>    save_vis_images (valImage, Rectangle, WindowHandle, save_file_name, 'val_oringnal')</l>
-<c>    </c>
-<c>    </c>
-<c>    * 图像融合后效果</c>
-<l>    add_image (irImage, valImage, ImageAdd, 0.5, 0)</l>
-<l>    save_vis_images (ImageAdd, Rectangle, WindowHandle, save_file_name, 'simple_fusion')</l>
-<c>    </c>
-<l>    stop ()</l>
-<c>    </c>
-<l>endfor</l>
+<c>* 目标图片</c>
+<l>read_image (Image, '00137.jpg')</l>
+<l>get_image_size (Image, Width, Height)</l>
+<l>rotate_image (Image, ImageRotate, 90, 'constant')</l>
+<l>zoom_image_size (ImageRotate, ImageRotate, Width, Height, 'constant')</l>
+<l>crop_rectangle1 (Image, ImagePart, 100, 100, Height-1, Width-1)</l>
+<l>zoom_image_size (ImagePart, ImageZoom, Width, Height, 'constant')</l>
+<l>mirror_image (Image, ImageMirror_row, 'row')</l>
+<l>mirror_image (Image, ImageMirror_col, 'column')</l>
+<l>concat_obj (ImageRotate, ImageZoom, ImageRotate)</l>
+<l>concat_obj (ImageRotate, ImageMirror_row, ImageRotate)</l>
+<l>concat_obj (ImageRotate, ImageMirror_col, ImageRotate)</l>
+<c>* 拼凑增强后图片</c>
+<l>tile_images (ImageRotate, TiledImage, 2, 'vertical')</l>
+<l>write_image (TiledImage, 'jpg', 0, dir_img + 'image_augument')</l>
+<c></c>
+<c>*噪声</c>
+<c></c>
+<l>read_image (Image1, 'printer_chip/printer_chip_01')</l>
 </body>
 <docu id="main">
 <parameters/>
