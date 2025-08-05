@@ -8,7 +8,7 @@
 <c></c>
 <c></c>
 <c>* 目标图片</c>
-<l>read_image (Image, '00137.jpg')</l>
+<l>read_image (Image, dir_img + 'Vis(1)/Vis/17874/Add_0.8.jpg')</l>
 <l>get_image_size (Image, Width, Height)</l>
 <l>rotate_image (Image, ImageRotate, 90, 'constant')</l>
 <l>zoom_image_size (ImageRotate, ImageRotate, Width, Height, 'constant')</l>
@@ -25,7 +25,21 @@
 <c></c>
 <c>*噪声</c>
 <c></c>
-<l>read_image (Image1, 'printer_chip/printer_chip_01')</l>
+<l>read_image (Image1, dir_img + 'Vis(1)/Vis/17874/val_original.jpg')</l>
+<c></c>
+<l>decompose3 (Image1, Image11, Image2, Image3)</l>
+<l>get_image_size (Image11, Width1, Height1)</l>
+<l>gen_image_const (Image4, 'byte', Width1, Height1)</l>
+<l>overpaint_region (Image4, Image4, 100, 'fill')</l>
+<l>compose3 (Image11, Image4, Image3, MultiChannelImage)</l>
+<l>trans_from_rgb (Image11, Image2, Image3, ImageResult1, ImageResult2, ImageResult3, 'hsv')</l>
+<l>compose2 (ImageResult2, ImageResult3, MultiChannelImage2)</l>
+<l>compose3 (ImageResult1, ImageResult2, ImageResult3, MultiChannelImage1)</l>
+<c></c>
+<l>write_image (MultiChannelImage1, 'jpg', 0, dir_img + 'HV_val.jpg')</l>
+<c></c>
+<l>write_image (Image11, 'jpg', 0, dir_img + 'gray_val.jpg')</l>
+<c></c>
 </body>
 <docu id="main">
 <parameters/>
