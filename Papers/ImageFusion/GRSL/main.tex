@@ -1,242 +1,402 @@
-
 \documentclass[journal]{IEEEtran}
-\usepackage{xeCJK}
-
-
-\ifCLASSINFOpdf
-
-\else
-
-\fi
-
 \hyphenation{op-tical net-works semi-conduc-tor}
-
-% 添加reference 依赖的包
 \usepackage[utf8]{inputenc}
-\usepackage{graphicx} % 图像显示
+\usepackage{graphicx}
 \usepackage[justification=centering]{caption} %caption居中
-\usepackage[sorting=none]{biblatex}
+%\usepackage[sorting=none]{biblatex}
+%\addbibresource{reference.bib}
 \usepackage{booktabs} % 表格
-
-\usepackage{fontspec} % 字体
-
 \usepackage{float}  %引入float宏包
 \usepackage{bm} % 加黑
+\usepackage{xcolor}% 字体颜色
+\usepackage[table]{xcolor}
 
+\usepackage{amsmath}%数学公式
+\usepackage[numbers,sort&compress]{natbib}
+%\usepackage{siunitx} % For proper alignment of numbers
+\usepackage[section]{placeins}
+\usepackage{caption} % For table captions
 
-\addbibresource{reference.bib}
 % 图片依赖的路径
 \graphicspath{{chapter and images}}
-
 \begin{document}
-% 标题
-\title{MLSA-YOLOV8: an efficient infrared remote sensing small object detection based on label assignment strategy and tiny head}
-% 作者信息
+\title{HMIF:An Efficient Infrared and RGB Image Fusion Network Based on HVI}
 \author{Yi~Li, Huajun~Wang}
 
-\markboth{}% 标签
+\markboth{}
 {Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for Journals}
-
 \maketitle
 
-%摘要
 \begin{abstract}
-aa
+Infrared and visible image fusion combines the thermal target information from infrared images with the textural details from visible images, significantly enhancing scene perception. However, differences in image acquisition between infrared and RGB sensors introduce key challenges. Firstly, RGB images are susceptible to luminance noise under low-light conditions, degrading fusion quality. Secondly, existing methods often simply superimpose multi-sensor information, neglecting the distinct characteristics of different modalities, which leads to loss of critical information or redundancy. To address these limitations, we propose the HVI Adaptive Brightness Enhancement module to improve fusion stability and accuracy under low-light conditions. Furthermore, based on the existing EMMA framework, we integrate the HVI module with mainstream fusion modules to construct an asymmetric dual-branch fusion architecture. Experimental results demonstrate that the proposed method achieves superior subjective visual quality and objective evaluation metrics in infrared-visible image fusion tasks, effectively enhancing fusion performance in complex scenes.
+
 \end{abstract}
 
-% 关键字
 \begin{IEEEkeywords}
-Infrared small object detection, Label Assignment, Prediction Head, Anchor Free
+Image fusion, unsupervised learning, 
 \end{IEEEkeywords}
-
 \IEEEpeerreviewmaketitle
-
-% Introduction
 \section{Introduction}
+Visible and Infrared Image Fusion (VIF) synthesizes images captured by different sensors, typically infrared and visible spectrum images, into a single composite representation. The core objective is to integrate complementary and redundant information from these source images, generating a fused result richer in information than any individual input. This enhanced imagery significantly benefits downstream processing tasks across diverse fields including digital photography, remote sensing, agriculture, medicine, and biometrics \cite{ma2019infrared}.
+Visible images exhibit high spatial resolution and rich textural detail, closely aligning with human visual perception. However, their quality is highly vulnerable to occlusion, illumination variations, and adverse weather conditions. Infrared imaging, based on thermal radiation capture, offers superior penetration capabilities (through media like smoke or mist) and effectively distinguishes materials through emissivity differences. Infrared images typically suffer from lower spatial resolution, edge blurring due to thermal diffusion effects, and prominent non-uniformity noise and temporal noise.
 
-\IEEEPARstart{I}{nfrared} imaging systems can detect objects at any time of day, making them a significant technological advancement. Their capacity to capture heat sources further enhances their functionality, providing a comprehensive view of the environment. Coupled with their extensive range, these systems offer unparalleled surveillance capabilities. These features make them critical optoelectronic components in surveillance systems\cite{dai2023one}. Robust small object detection is important to infrared search and tracking applications. Moreover, it has been an investigatory hot spot \cite{zhao2022single}. Generic object detectors are categorized into: anchor-based and anchor-free patterns. However, their performance on small-target tasks suffers from unreasonable label assignment of small targets and low resolution after CNN drop sampling
-\cite{xu2022rfla}.
+Consequently, a primary challenge in VIF stems from the fundamentally distinct physical properties captured by each modality: thermal radiation versus light reflection. This divergence places their respective features on separate manifolds \cite{luo2023infrared}. Naïve linear fusion strategies, such as weighted averaging, frequently induce feature conflict. For example, a high-temperature region appearing bright in the infrared image might correspond to a low-brightness region in the visible image.
+Existing VIF approaches fall primarily into traditional methods and deep learning-based techniques. Traditional methods typically follow a three-stage process: feature extraction (e.g., texture from visible images and salient thermal targets from infrared images) using specific transforms like multi-scale decomposition; application of predefined fusion rules within the transformed domain; and reconstruction of the fused image via the inverse transform \cite{luo2023infrared}. The reliance on manually designed steps and parameters limits their robustness and ability to produce high-quality fusion results across diverse real-world scenarios \cite{lin2022review}.
 
-% 标签分配
+Driven by significant advancements in deep learning for image processing, substantial research focuses on leveraging these techniques for VIF \cite{luo2023infrared}. Based on network architecture, deep VIF methods are categorized into CNN-based, Autoencoder-based, Generative Adversarial Network-based, Transformer-based, and hybrid approaches. CNN-based methods (\cite{Hou2020VIFNet}) effectively capture local features but struggle with long-range dependencies. Autoencoder-based methods, such as DenseFuse \cite{Hui2019DenseFuse}, pre-train an encoder-decoder structure using infrared and visible image pairs. Hand-crafted rules (e.g., addition, L1-norm) then merge the extracted features before the decoder reconstructs the fused image. While yielding reasonable results, dependence on manual fusion rules often leads to suboptimal performance. Generative Adversarial Network-based methods (e.g., DDcGAN \cite{Jiayi2020DDcGAN}) employ discriminators to guide generators towards producing fused images matching source distributions. Nevertheless, these methods suffer from interpretability issues, control difficulties, training instability, and potential texture distortion. Transformer-based approaches (e.g., SePT \cite{yang2024semantic}) leverage self-attention for effective long-range modeling, albeit often with high computational complexity. Hybrid architectures represent the current mainstream, aiming to combine advantages. For instance, CMFuse \cite{Zhao2024CMFuse} focuses on optimizing cross-modal interactions, while EMMA \cite{zhao2024equivariant} utilizes outputs from existing fusion algorithms to learn sensor distribution properties for training guidance. Hybrid methods still demonstrate limitations in complex scenarios involving uneven illumination and strong noise.
 
-\subsection{Label Assignment Strategy}
-Location, as one of the main tasks of detection, is expressed as a regression problem in most detection paradigms, where the location branch is designed as an output boundary box offset, and the joint intersection (lou) metric is usually used to evaluate the accuracy\cite{zhu2021tph}. FasterRCNN and RetinaNet select the IoU threshold of pre-defined anchors and ground truth to distinguish positive and negative samples \cite{ren2015faster}\cite{lin2017focal}. Considering the distance between center points, overlapping parts, along with aspect ratio. yolov4 chose CIoU as the label Assignment Tactic can fulfill greater convergence velocity and precision on the BBox regression \cite{bochkovskiy2020yolov4}.  FCOS chooses anchors located in the central region of ground truth as its positive sample\cite{tian2019fcos}. The IoU metric, however, exhibits a significant bias towards larger objects and demonstrates high sensitivity to small infrared targets owing to their diminutive size . As shown in the\ref{fig: IOU}, small deviations (6 pixels along diagonal orientation) in small object prediction box caused a significant drop in loU (from 72$\%$ to 38$\%$) compared to normal objects (96$\%$ and 92$\%$). In other words, Compared with regular objects IoU is vulnerable to light offset between two boundary boxes, and this ambiguous anchors assignment can affect the learning of regression branches\cite{xu2021dot}. We call this problem Low tolerance for bounding box perturbation \cite{zhao2022single}.  Given the above problems,  Xu put forward dot distance, they think very small objects could be regarded as points and the importance of height and breadth is far lower than that of the locations of center points. Hence, DotD centers uniquely on the positional correlation between center points, and the correlation becomes more appropriate for tiny targets of absolute size below 16 pixels\cite{xu2021dot}. However, the dot method needs to calculate each pixel point. When the target is too large, the computational complexity is high. To tackle the performance difference in infrared tiny object detection, a new label assignment plan is brought forward, which is known as the Multi-scale label assignment strategy. We continue to utilize CIOU as the label allocation index for low-resolution large maps and reference DotD for high-resolution feature maps in order to further enhance the detection rate of minimal targets.
+Despite progress in integrating key complementary information from infrared and visible images, significant challenges persist: (1) Visible images suffer severe detail loss in underexposed/overexposed regions under extreme illumination variations, which existing algorithms inadequately address; (2) Predominant frameworks typically apply symmetric feature extraction paths \cite{lin2022review}, hindering integration with adaptive enhancement strategies for visible inputs;
 
-\begin{figure}[!t]
-    \centering
-    \includegraphics[width=0.5\textwidth]{IOU campare}
-    
-    \caption {The sensitivity analysis of $IOU$ on small and normal scale objects. Each grid denotes a pixel. box $A$ denotes the ground truth bbox, box $B$, $C$ denote the predicted bbox with 1 pixel and 3 pixels right-down deviation respectively.}
-
-    \label{fig: IOU}
-\end{figure}
-
-\subsection{Tiny Head } % 检测头
-In the realm of computer vision applications, object detection aims to address the inquiry of "what targets and where are positioned.” In the age of deep learning (DL), a predominant paradigm among modern object detectors involves a backbone for feature extraction and a head dedicated to localization and classification tasks. Under the influence of computational cost, former lightweight detectors invariably employ characteristic maps with low detection resolutions (38 X 38 in SSDLite, 19 × 19 in Pelee, 20 × 20 in ThunderNet). Nonetheless, tiny characteristic maps showing low spatial resolution, can not offer spatially matched characteristics for targets in arbitrary locations, particularly for tiny targets\cite{chen2023tinydet} Such information loss hardly affects large or medium-sized targets. Unfortunately, this is fatal for small objects, as the detector heads struggle to give accurate predictions over highly structured representations, in which the weak signal from small objects is all but eliminated\cite{zhao2022single}. Furthermore, the SISRT-V2 dataset is explored, and it is discovered that it encompasses numerous highly tiny cases,  such as those with bounding boxes of 3 X 3 ~ 5 X 5, which might include no characteristic points through a pervasive characteristic map stride \cite{dai2023one}. Thereby, to handle the difficulty of investigating tiny targets in complex scenes, a new detection head is raised\ref{fig: Head} which consists of a small target detection module. Unlike the conventional detection head that performs classification and regression simultaneously, we decoupled these two tasks into separate branches. Moreover, we added an extra prediction head to the original three-layer detection structure, which is specifically designed for tiny object detection.
-% 总结
-The performance distinctions in infrared small target detection is largely triggered by two elements. For starters, present label assignment patterns, whether anchor-based or anchor-free, tend to inaccurately mark highly small ground-truth objects as background, which causes the detectors to attach less importance to tiny objects. Secondly, The detection heads designed by conventional object detection methods are difficult to give accurate predictions based on highly structured representations, where small objects fail to detect tiny targets. In conclusion, our conclusions are listed below: 
-
+To address these limitations, this paper presents three core contributions: 
 \begin{itemize}
-  \item An effective multi-scale label assignment(MSLA) tactic is introduced. The MSLA can easily displace the point-based label assignment tactics in mainstream detectors and standardized boxes, thereby facilitating their performance on Infrared small targets.       
-  \item we designed a multi-scale small target detection head,  and it is capable of improving the detecting performance of tiny objects without losing large targets.
-  \item Our experiment results on the SISRT-V2 datasets reached SOTA.
+    \item \textbf{HVI Adaptive Brightness Enhancement Strategy:} We propose an HVI adaptive brightness enhancement strategy. This strategy effectively enhances the stability of the fusion process and the robustness of the results under low-light and uneven illumination conditions.
+    \item \textbf{Asymmetric Dual-Branch Fusion Framework:} We construct an asymmetric dual-branch fusion framework. This framework, termed the Asymmetric Dual-Branch Fusion Framework , integrates the HVI module with a mainstream fusion module. It employs a two-stage fusion approach to separate the enhanced visible image and the original infrared image.
+    \item \textbf{Experimental Results:} Experimental results demonstrate that our fusion model significantly improves the color richness of visible images, exhibits stronger detail preservation capabilities, mitigates noise interference, and markedly enhances the visibility of target objects within scenes.
 \end{itemize}
 
-% 方法介绍
+
 \section{METHODOLOGY}
-The one-stage detection framework ultralytics was selected as our datum line since it is the most convenient and remarkable one-stage detector\cite{glenn_jocher_2022_7347926}. The infrared small targets have a small sample size and few categories, so we add tiny CSDarknet as the backbone. we still keep FPN and PanNet architecture as our head, which is comprised of some bottom-up pathways and some top-down pathways \cite{lin2017feature}\cite{PanNet}. To further optimize the whole architecture, we design an effective Muti-scale label assignment(MSLA) strategy. Then, we designed a multi-scale tiny object detection head to enhance the detecting rate of small targets. While we train the model through the SISRT-V2 dataset by means of a data augmentation tactic (MixUp, Mosaic).
-% 插入网络结构图
+\label{sec:method}
+\subsection{HVI Transformation}
+\label{ssec:hvi}
+Low-Light Image Enhancement (LLIE) aims to improve visual quality under poor illumination conditions, with core challenges involving effective noise suppression and color distortion mitigation. Current methodologies predominantly process images in standard RGB space \cite{yan2025hvi}. However, natural scene imagery exhibits high sensitivity to brightness fluctuations due to illumination variations, occlusions, and shadows. The fundamental limitation of RGB representation lies in the tight coupling of luminance and chrominance information: brightness variations induce correlated changes across all three channels (R, G, B), preventing independent manipulation of lightness and color.
+
+To address this limitation, conversion to HSV color space is frequently employed. This perceptual model decouples color attributes into three orthogonal components:
+\begin{align}
+\text{Hue (H)} &:\ \text{dominant wavelength} \\
+\text{Saturation (S)} &:\ \text{color purity} \\
+\text{Value (V)} &:\ \text{brightness intensity}
+\end{align}
+The separation facilitates improved color denoising and luminance restoration. RGB-to-HSV conversion proceeds as follows. Given $R, G, B \in [0, 255]$, first normalize components:
+\begin{equation}
+R' = \frac{R}{255}, \quad G' = \frac{G}{255}, \quad B' = \frac{B}{255}
+\end{equation}
+Compute extrema and differential:
+\begin{align}
+C_{\text{max}} &= \max(R', G', B') \\
+C_{\text{min}} &= \min(R', G', B') \\
+\Delta &= C_{\text{max}} - C_{\text{min}}
+\end{align}
+Hue ($H$) is then derived:
+\begin{equation}
+H = 
+\begin{cases}
+0^\circ & \Delta = 0 \\
+60^\circ \times \left( \frac{G' - B'}{\Delta} \mod 6 \right) & C_{\text{max}} = R' \\
+60^\circ \times \left( \frac{B' - R'}{\Delta} + 2 \right) & C_{\text{max}} = G' \\
+60^\circ \times \left( \frac{R' - G'}{\Delta} + 4 \right) & C_{\text{max}} = B'
+\end{cases}
+\end{equation}
+Saturation ($S$) and Value ($V$) follow:
+\begin{equation}
+S = 
+\begin{cases}
+0 & C_{\text{max}} = 0 \\
+\Delta / C_{\text{max}} & \text{otherwise}
+\end{cases}, \quad
+V = C_{\text{max}}
+\end{equation}
+
+Despite advantages in luminance-chrominance separation, HSV introduces noticeable red-band artifacts and dark-region noise during enhancement, particularly degrading perceptual quality in saturated reds and shadows. To overcome these artifacts, we introduce the HVI color space \cite{yan2025hvi}, which decomposes sRGB images into:
+\begin{align}
+\text{Intensity map } (I_{\text{max}}) &:\ \text{scene illuminance} \\
+\text{HV color map } (\hat{H},\hat{V}) &:\ \text{chromatic structure}
+\end{align}
+where $I_{\text{max}}$ is computed per-pixel as:
+\begin{equation}
+I_{\text{max}}(x) = \max\limits_{c \in \{R,G,B\}} I_c(x)
+\end{equation}
+
+HVI eliminates hue discontinuities through polar encoding:
+\begin{equation}
+H = \cos\left(\frac{\pi h}{3}\right), \quad 
+V = \sin\left(\frac{\pi h}{3}\right)
+\end{equation}
+where $h \in H$ and $v \in V$ represent orthogonal components. This formulation ensures continuous representation across the hue spectrum (notably eliminating red-region artifacts) while minimizing Euclidean distances between perceptually similar colors.
+
+Noise amplification in low-light regions is suppressed via adaptive intensity compression:
+\begin{equation}
+C_k(x) = \sqrt[k]{\sin\left(\frac{\pi I_{\text{max}}(x)}{2}\right) + \varepsilon}
+\end{equation}
+where the learnable parameter $k$ controls compression strength. This function implements radial mapping, with small $C_k$ values concentrating low-intensity regions. The transformed components are then obtained by:
+\begin{equation}
+\hat{H} = C_k \odot S \odot H, \quad \hat{V} =  C_k \odot S \odot V
+\end{equation}
+where $\odot$ denotes the Hadamard product. Final HVI representation concatenates $\hat{H}$, $\hat{V}$, and $I_{\text{max}}$.
+
+In multispectral fusion frameworks, visible images transformed to HVI yield HV maps $(\hat{H},\hat{V})$ and $I_{\text{max}}$, while infrared images provide complementary intensity data. These components are channel-concatenated and fed into enhancement modules, leveraging HVI's artifact suppression and signal fidelity preservation properties.
+
+
+
+
+\subsection{Enhance HVI Fusion Module}
+\label{ssec:fusion}
+The enhancement fusion module comprises an HV feature branch and an intensity (I) feature branch. Initial feature extraction is performed using $3\times3$ convolutions. Subsequently, a U-Net architecture-based fusion network (Fig. \ref{fig:pipeline}) integrates multimodal features. This network embeds multiple Cross-Attention Blocks (CABs) and incorporates skip connections between its encoder and decoder.
+
+The cross-attention mechanism establishes bidirectional guidance between the two branches. Features extracted by the intensity (I) branch dynamically modulate feature responses in the HV branch via attention weights, enabling brightness-adaptive noise suppression (enhanced denoising in low-light regions while preserving original color in bright regions). Crucially, the optimized HV features simultaneously feed back structural and textural color information to the I branch, constraining the enhancement process to mitigate halo artifacts. This design is grounded in the physical observation that noise intensity varies inversely with illumination intensity, necessitating region-specific processing.
+
+The decoder outputs two enhanced feature maps: the enhanced HV features ($\hat{HV_e}$) and the enhanced intensity features ($\hat{I_e}$). These features are concatenated along the channel dimension and fed into the Post-HVI Inverse Transform (PHVIT) module to reconstruct the enhanced sRGB output image.
+
+The PHVIT module reverses the transformation. It decomposes $\hat{HV_e}$ into its orthogonal components $\hat{H_e}$ and $\hat{V_e}$ using learned parameters $C_k$ and $\epsilon$, computing intermediate variables $\hat{h}$ and $\hat{v}$:
+\begin{equation}
+\begin{aligned}
+\hat{h}=\frac{\hat{H_e}}{C_k+\epsilon} \\
+\hat{v}=\frac{\hat{V_e}}{C_k+\epsilon}
+\end{aligned}
+\end{equation}
+Subsequently, $\hat{h}$, $\hat{v}$, and $\hat{I_e}$ are transformed back to the standard HSV color space:
+\begin{equation}
+\begin{aligned}
+H_{new} &= \arctan(\frac{{\hat{v}}'}{\hat{h}'}) \mod 1  \\
+S_{new} &= \alpha_s \sqrt{{(\hat{v}}')^{2} + {(\hat{h}}')^{2}} \\
+V_{new} &= \alpha_{i} \hat{I_e}
+\end{aligned}
+\end{equation}
+where $\alpha_s$ and $\alpha_{i}$ are learnable linear parameters scaling saturation and intensity weights, respectively. Finally, the components $H_{new}$, $S_{new}$, and $V_{new}$ are converted from the HSV color space to the standard sRGB color space, yielding the enhanced output image.
 
 \begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.8\textwidth]{Net}
-    \caption {The architecture of the MSHN. a) CSPDarknet53 backbone with four multi-scale detection heads at the end. b) The Neck uses a structure like PANet.}
-
-    \label{fig: Net}
+    \includegraphics[width=1.0\textwidth]{chapter and images/enhance_fusion.png}
+    \caption{Overview of the Enhanced Fusion Network Architecture. (a) HVI Color Transformation Module (HVIT): Transforms visible light into the HVI color space, obtaining its HV channels and intensity map, alongside the infrared image's intensity map. (b) Enhanced Fusion Network: Employs a dual-branch UNet architecture as its core, integrating six lightweight Cross-Attention Block (CAB) modules. (c) Perceptual Inverse HVI Transformation (PHVIT): Converts the enhanced HVI representation back into the RGB format, producing the final enhanced fused image.}
+    \label{fig:pipeline}
 \end{figure*}
 
-\subsection{MSLA strategy in tiny Object}
-Since the most extensive metric is adopted in target detection, IoU has restrictions for assessing the positional correlation between two boundary boxes \cite{xu2021dot}. After continuous improvement, CIOU has been adopted as a mainstream label for assigning losses. However, the enhancements may not address the issue that small targets are vulnerable to IoU. Therefore, for the problem of  tiny and medium-sized infrared objects, we adopt the combination of CIOU and DotD. DotD is introduced as the evaluation index for high-resolution feature images, and for low-resolution images, CIOU is used as the index. This is called the MSLA strategy.
+\subsection{Enhanced EMMA Framework with Equivariant Imaging Prior}
+\label{ssec:maf}
 
-\subsubsection{DIoU}
-Distance Intersection over Union(DIoU) considers the overlapping velocity,  distance between the target and the anchor, and scale \cite{zheng2019distanceiou}. The loss function is listed below:
-\begin{center} % 居中
-\begin{equation}
-\mathcal{L}_{D I O U}=1-I O U+\frac{\rho^2\left(\mathbf{b}, \mathbf{b}^{g t}\right)}{C^2}
-\end{equation}
-\end{center}
-where $b$ and $b^{g t}$ represent the center point of the prediction box and the real box. $\rho$ means the Euclidean distance between the center of $b$ and $b^{g t}$, $C$  means diagonal length of the tiniest enclosing box encompassing the two boxes. As it is used in loss function, the regression of the object box is swifter and more steady. 
-
-\subsubsection{CIoU}
-considers aspect ratio on the grounds of DIOU metrics\cite{zheng2019distanceiou}. The loss function is defined as below
-
-% 公式插入
-\begin{center} % 居中
-\begin{equation}
-\mathcal{L}_{C I o U}=1-I o U+\frac{\rho^2\left(\mathbf{b}, \mathbf{b}^{g t}\right)}{c^2}+\alpha v
-\end{equation}
-\end{center}
-
-here ${\alpha}$ represents an active trade-off parameter, 
-\begin{center} % 居中
-\begin{equation}
-\alpha=\frac{v}{(1-I o U)+v}
-\end{equation}
-\end{center}
-
-$v$ determines the uniformity of aspect ratio
-\begin{center} % 居中
-\begin{equation}
-v=\frac{4}{\pi^2}\left(\arctan \frac{w^{g t}}{h^{g t}}-\arctan \frac{w}{h}\right)^2
-\end{equation}
-\end{center}
-where $w^{g t}$,$h^{g t}$ denote width and height of the bounding box
-ground truth, $w$,$h$ denote width and height of boundary box anchor.
-\subsubsection{Dot Distance}
-Dot Distance (DotD) is derived from the observation that absolute and relative sizes of small boundary boxes are much smaller than those of big or medium-sized boundary boxes. The loss function is as below:
-
-\begin{center} % 居中
-\begin{equation}
-\mathcal{L}_{D o t D}=1-e^{-\frac{\rho\left(\mathbf{b}, \mathbf{b}^{g t}\right)}{S}}
-\end{equation}
-\end{center}
-$\rho$ denotes the Euclidean distance between the center of  $b$ and $b^{g t}$ as below, and $\mathcal{S}$ is the average size of tiny objects in a certain dataset.
-
-\begin{center} % 居中
-\begin{equation}
-\mathcal{S}=\sqrt{\frac{\sum_{i=1}^M \sum_{j=1}^{N_i} w_{i j} \times h_{i j}}{\sum_{i=1}^M N_i}}
-\end{equation}
-\end{center}
-Where  $w_ij$ and $h_ij$ denote the width and height of $j$-th bounding box within $i$-th image. $M$ stands for the quantity of images in some dataset, $N_i$ stands for the quantity of the marked boundary boxes within the $i$-th image.
-
-
-\subsection{Prediction head for tiny objects}
-The backbone as a categorization network, can not fulfill the positioning assignment. Furthermore, the head is devised to take responsibility for exploring the position and type of the subject through the characteristics maps from  the  backbone\cite{zhu2021tph}. As shown in \ref{fig: Head}, Integrated with other three predicting heads, our four-head construction can alleviate the passive effect of violent target scale variance. the added predicting head ($a$) originates in an elevated-resolution, low-degree, characteristic map,  which becomes more vulnerable to highly targets. 
-
-\begin{figure}[htbp]
+\begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.4\textwidth]{Head}
-    
-    \caption {The architecture of Head, contains two main blocks, a normal decouple head block and a tiny decouple head block. Normal decouple head help the network converge better and prevent the network from over fitting. Tiny decouple head can help the current node pay attention to tiny objects.}
-    \label{fig: Head}
-\end{figure}
+    \includegraphics[width=1.0\textwidth]{chapter and images/EMMA.png}
+    \caption{改进EMMA自监督融合网络架构概述（a）HVI Fusion：Enhanced HVI Fusion Network（b）等变模块：用于数据增强（c）伪传感器模块：普通UNet网络，经过训练后freeze，只负责推理。}
+    \label{fig:EMMA}
+\end{figure*}
 
-% 实验
-\section{EXPERIMENTS}
-\subsection{Dataset}
-SIRST-V2 is a specific dataset, and it is designed for single- frame infrared tiny object detection, where the graphs are chosen from thousands of infrared sequencing for disparate scenes. This dataset involves 1024 typical graphs largely at a resolution of 1280 × 1024. These graphs are acquired from the truthful videos of diverse scenes and they offer a tough trial bed to infrared tiny object detection in intricate real scenes.
+To effectively leverage multi-modal fusion information, we propose the Enhanced Multi-modal self-supervised fusion frAmework (EMMA), which integrates an equivariant imaging prior. EMMA adapts the inherent pattern of its loss function by simulating the sensing imaging process based on natural imaging principles. The core workflow of EMMA is illustrated in Figure \ref{fig:EMMA}.
 
-\subsection{Experimental Setting}
-The total experiments are executed through PyTorch on Ubuntu20 with two RTX 3090. The optimizer is designated as SGD showing a learning velocity of 1e - 2. The target detection is largely assessed by Precision, Recall, and mAP. Target detection outcomes are categorized into TP, FP, FN, along with TN. TP denotes the positive specimen of the accurate categorization; FP denotes the positive specimen of the misclassification; FN denotes the passive specimen of the misclassification; and TN denotes the passive specimen of the accurate categorization. Precision is the proportion of the specimens which are accurately categorized as positive specimens to the whole quantity of detection specimens. The recall is the proportion of specimens of this category which are accurately categorized and recognized to the quantity of specimens in the whole object test sets of this category. In addition, the lost detection rate is used to recognized and assess the algorithm performance for the object frame. The formula is listed as below:
+During training, the original infrared ($i$) and visible ($v$) images are first input into the HVI Fusion network (Fig. \ref{fig:EMMA}(a)). This network acts as the fusion backbone, extracting and integrating information from both modalities to produce a preliminary fused feature map $f$.
 
-\begin{center} % 居中
-\begin{equation}
-Re=\frac{TP}{TP + FN}
+Subsequently, $f$ is processed by the Equivariant Module (Fig. \ref{fig:EMMA}(b)), which applies predefined geometric transformations (e.g., rotation, translation, reflection) to generate a transformed fused image $f_t$. This step is grounded in the Equivariant Imaging Prior, which posits that the representation of a fusion result should exhibit corresponding consistency under these transformations. The augmentation enhances model robustness and generalization in the absence of direct supervision.
+
+The transformed image $f_t$ is then fed into two independent, pre-trained pseudo-sensor modules: an infrared pseudo-sensor module $A_i$ and a visible pseudo-sensor module $A_v$. Both modules utilize a standard U-Net architecture. These modules are trained with pseudo ground truth generated from state-of-the-art fusion algorithms to learn the mapping from the fused image back to the original source images. During EMMA's main training phase, the weights of these pseudo-sensor modules remain frozen; they function solely as "inverse decoders" performing forward inference to assess whether $f_t$ retains sufficient information for reconstructing the source images. Consequently, $A_i$ infers a pseudo-infrared image $\hat{i}_t$ and $A_v$ infers a pseudo-visible image $\hat{v}_t$.
+
+Finally, the pseudo-infrared $\hat{i}_t$ and pseudo-visible $\hat{v}_t$ images are cycled back as input into the same HVI Fusion network, producing the final fused output $\hat{f_t}$.
+
+\subsection{Loss Function}
+Our framework incorporates loss functions for infrared images, visible images, and the final fused output. The total loss \(L_{\text{total}}\) is computed as a weighted combination of these three components:
+\begin{equation}\label{equ}
+    \begin{aligned}
+    L_{\text{total}} =  L(A_i(f), i) + \alpha_1 L(A_v(f), v) \\
+    + \alpha_2 L(f_t \hat{}, f_t) 
+    \end{aligned}
 \end{equation}
-\end{center}
+where \(L(x \hat{}, x) = \ell_1(x, \hat{x}) + \ell_1(\nabla x, \nabla \hat{x})\). Here, \(\nabla\) denotes the **Sobel operator** for computing image gradients, and \(\alpha_1\), \(\alpha_2\) are tuning parameters that balance the contribution of each loss term.
 
-\begin{center} % 居中
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Evaluation Metrics}
+To quantitatively assess algorithm performance, we employ seven metrics: Average Gradient (AG), Edge Intensity (EI), Entropy (EN), Mutual Information (MI), Standard Deviation (SD), Spatial Frequency (SF), and Structural Similarity Index (SSIM). Their mathematical formulations are detailed below.
+
+\textbf{Average Gradient (AG)} quantifies image sharpness using spatial derivatives:
 \begin{equation}
-Pr=\frac{TP}{TP + FP}
+    \text{AG} = \frac{1}{MN}\sum_{i=1}^{M}\sum_{j=1}^{N}\sqrt{\frac{(\partial I/\partial i)^2 + (\partial I/\partial j)^2}{2}}
 \end{equation}
-\end{center}
-We seek to gain the total potential values of Precision and Recall and Precision-Recall curve through calculation. The mean network precision is calculated as the area under the curve. Furthermore, the value varies between 0 and 1
+where \(M\) and \(N\) represent image width and height, and \(I(i,j)\) is the pixel intensity at location \((i,j)\).
 
-
-\begin{center} % 居中
+\textbf{Edge Intensity (EI)} measures edge strength based on Sobel filtering:
 \begin{equation}
-AP_{IoU}= \int_{0}^{1} P(R) dR
-\end{equation}Precision and Recall values and figure out Precision-Recall curve
-\end{center}
-Precision and Recall values and calculate the Precision-Recall curve
-\subsection{Small-target  Detection and Analysis}
-To affirm the feasibility and superiority of our proposed model, we compared it with five models on the SIRST-V2 dataset The specific experimental results are presented in Table \ref{tab:univ-compa}. As can be seen in Tables\ref{tab:univ-compa} our model has an AP50 value of 93.1\%, which is significantly better than other detection models. 
-\begin{table}[!t]
-    \centering
-    \caption{Comparison of performance among the proposed algorithm and the other five algorithms in SIRST-V2.}
-    \label{tab:univ-compa}
-    \begin{tabular}{lcccr}
+    EI(F) = \frac{1}{MN} \sqrt{\sum_{i=1}^{M} \sum_{j=1}^{N} \left[ (F * h_x)(i,j)^2 + (F * h_y)(i,j)^2 \right] }
+\end{equation}
+Here, \(*\) denotes convolution, \(F\) is the fused image, and \(h_x\), \(h_y\) are Sobel kernels in the horizontal and vertical directions.
+
+\textbf{Entropy (EN)} evaluates the information content of an image:
+\begin{equation}
+    \text{EN} = -\sum_{k=0}^{L-1} p(k)\log_2 p(k)
+\end{equation}
+where \(p(k)\) is the probability of occurrence of gray level \(k\) in the image histogram, and \(L\) is the number of possible gray levels.
+
+\textbf{Mutual Information (MI)} assesses the dependency between source images \(A\), \(B\) and the fused image \(F\):
+\begin{equation}
+    \begin{aligned}
+        \text{MI} = \sum_{a,f} p_{A,F}(a,f)\log\left(\frac{p_{A,F}(a,f)}{p_A(a)p_F(f)}\right) \\
+        + \sum_{b,f} p_{B,F}(b,f)\log\left(\frac{p_{B,F}(b,f)}{p_B(b)p_F(f)}\right)
+    \end{aligned}
+\end{equation}
+where \(p_{A,F}(a,f)\) and \(p_{B,F}(b,f)\) are joint probability distributions, and \(p_A(a)\), \(p_B(b)\), \(p_F(f)\) are marginal distributions.
+
+\textbf{Standard Deviation (SD)} indicates overall contrast:
+\begin{equation}
+    \text{SD}(F) = \sqrt{\frac{1}{MN}\sum_{i=1}^{M} \sum_{j=1}^{N} \left( I(i,j) - \mu_F \right)^2}
+\end{equation}
+with \(\mu_F\) representing the mean intensity of the fused image \(F\).
+
+\textbf{Spatial Frequency (SF)} captures global activity level using row and column frequencies:
+\begin{equation}
+    \text{SF} = \sqrt{ \text{RF}^2 + \text{CF}^2 }
+\end{equation}
+\begin{align}
+    \text{RF} &= \sqrt{\frac{1}{MN}\sum_{i=1}^{M}\sum_{j=2}^{N}\left[ I(i,j) - I(i,j-1) \right]^2} \quad  \\
+    \text{CF} &= \sqrt{\frac{1}{MN}\sum_{i=2}^{M}\sum_{j=1}^{N}\left[ I(i,j) - I(i-1,j) \right]^2} \quad 
+\end{align}
+
+\textbf{Structural Similarity Index (SSIM)} quantifies perceptual similarity between reference image \(x\) and fused image \(y\):
+\begin{equation}
+    \text{SSIM}(x,y) = \frac{(2\mu_x\mu_y + C_1)(2\sigma_{xy} + C_2)}{(\mu_x^2 + \mu_y^2 + C_1)(\sigma_x^2 + \sigma_y^2 + C_2)}
+\end{equation}
+where \(\mu_x = \frac{1}{N}\sum_{i=1}^{N} x_i\) and \(\mu_y = \frac{1}{N}\sum_{i=1}^{N} y_i\) are mean intensities, \(\sigma_x^2\) and \(\sigma_y^2\) are variances, \(\sigma_{xy} = \frac{1}{N-1}\sum_{i=1}^{N}(x_i - \mu_x)(y_i - \mu_y)\) is the covariance, \(C_1 = (K_1 L)^2\), \(C_2 = (K_2 L)^2\). The constants are set as \(K_1 = 0.01\), \(K_2 = 0.03\), and \(L\) is the dynamic range (\(2^{\text{bits per pixel}} - 1\)).
+
+\subsection{Datasets}
+
+\textbf{VisDrone-DroneVehicle:} \citet{sun2021dronebasedrgbinfraredcrossmodalityvehicle} contains 56,878 drone-captured images. This dataset comprises 28,439 visible RGB images and their corresponding 28,439 infrared images, providing a comprehensive paired set of visible and infrared modality pairs for cross-modality analysis.
+
+\textbf{M3SVD Dataset:} \citet{TANG2025VideoFusion} offers 220 pairs of spatiotemporally aligned infrared and visible video sequences. These sequences can be decomposed into 153,797 temporally and spatially synchronized RGB-IR image pairs. The dataset encompasses diverse scenarios, including daytime and nighttime environments, along with challenging conditions such as low illumination, overexposure, and camera jitter.
+
+\subsection{Experimental Results}
+To comprehensively evaluate the performance of our proposed method, we conducted rigorous quantitative comparisons and generalization validation across multiple challenging datasets. For quantitative assessment, four state-of-the-art multimodal fusion methods were selected as baselines: DDFM \cite{zhao2023ddfmdenoisingdiffusionmodel}, QuadPrior \cite{wang2024zeroreferencelowlightenhancementphysical}, GSAD \cite{NEURIPS2023_fc034d18}, and EMMA \cite{zhao2024equivariant}. Experimental results demonstrate that our HMIF model outperforms the baseline methods across multiple quantitative metrics, confirming its effectiveness in fusion quality.
+
+As shown in Tables \ref{tab:DroneVehical1} and \ref{tab:DroneVehical2}, the HMIF model exhibits significantly superior overall performance compared to existing advanced models. Specifically (Table \ref{tab:DroneVehical1}), while HMIF shows a slight decrease in SD (-0.08) compared to EMMA, it achieves substantial improvements in key perceptual quality metrics: AG increased by 0.9 and EI improved by 4.29. This notable performance improvement primarily results from the proposed HVI adaptive brightness enhancement strategy. This strategy robustly adaptively adjusts low-light and unevenly illuminated regions, effectively enhancing the stability of the fusion process. Consequently, it improves the contrast and clarity of the fused images, thus significantly boosting metrics like AG and EI which reflect structural detail and sharpness.
+
+To thoroughly assess the model's generalization capability, we performed testing on the M3SVD dataset. Representative samples, frame\_00754.jpg from video "0118\_1904" and frame\_00000.jpg from video "1208\_1717", were selected for detailed analysis. The results (Tables \ref{tab:M3SVD1} and \ref{tab:M3SVD2}) confirm that HMIF consistently maintains superior performance in these new scenarios, demonstrating its robustness and broad applicability. As detailed in Table \ref{tab:M3SVD2}, although HMIF slightly trails EMMA in EN, it surpasses all existing state-of-the-art methods across all other key metrics, including AG, EI, and SD. This strong generalization capability stems from the adaptability of the HVI strategy to diverse illumination conditions and the effectiveness of our designed asymmetric dual-branch fusion framework. This framework specifically optimizes the processing of HV (Chroma and Luma) features from the enhanced visible image branch and intensity features from the fused infrared and visible image branch. This dual optimization effectively enhances the model's fusion performance under complex and varied real-world conditions. Collectively, the quantitative evaluations and cross-dataset experiments validate the superiority of the HMIF fusion model.
+
+
+
+
+
+% Table generated by Excel2LaTeX from sheet 'Sheet1'
+\begin{table}[htbp]
+  \centering
+  \setlength{\tabcolsep}{1.5mm}{}
+  \caption{Comparative evaluation on DroneVehicle dataset (Image: 17647.jpg)}
+   \scalebox{1}{
+    \begin{tabular}{clllllll}
     \toprule
-        \textbf{Method} & $\mathbf{mAP_{50-90}{(\%)}} $ & $ \mathbf{AP_{50}{(\%)}}$ & \textbf{Recall{(\%)}} & \textbf{Precies}  \\ 
-        \midrule
-        FasterRCNN & 62.28  & 80.7   & 59.2     & 0.68\\ 
-        FCOS       & 63.54  & 77.5   & 63.72    & 0.69\\ 
-        OSCAR      & 78.8   & 88.8   & 84.43     & 0.83\\
-        YOLOV5     & 71.2   & 83.5   & 79.51     & 0.78\\
-        YOLOV8     & 82.4   & 91.4   & 90.14       & 0.89\\
-        \textbf{Ours} & \textbf{83.9} & \textbf{93.1}   &  \textbf{94.0}    &  \textbf{93.0} \\
+          & AG    & EI    & EN    & MI    & SD    & SF    & SSIM   \\
+    \midrule
+    DDFM  & 5.23  & 90.02  & \textbf{7.64 } & 1.72  & 52.37  & 10.42  & 0.87  \\
+    \midrule
+    QuadPrior  & 5.24  & 97.68  & 7.44  & 1.79  & 55.85  & 10.43  & \textbf{1.07 }  \\
+    \midrule  
+    GSAD  & 5.98  & 102.48  & 7.48  & 1.84  & 50.86  & 11.55  & 0.99  \\
+    \midrule
+    EMMA  & 6.27  & 103.64  & 7.61  & 2.03  & \textbf{61.72 } & 12.02  & 0.89  \\
+     \midrule
+    \rowcolor{gray!40} Ours  & \textbf{6.36 } & \textbf{107.93 } & 7.62  & \textbf{2.13 } & 61.64  & \textbf{12.24 } & 1.03   \\
     \bottomrule
-    \end{tabular}
-\end{table}
+    \end{tabular}%
+    }
+  \label{tab:DroneVehical1}%
+  
+\end{table}%
 
-\begin{figure}[!t]
-    \centering
-    \includegraphics[width=8cm]{graph}
-    \caption {Comparison of training results among the proposed algorithm and the other five algorithms in SIRST-V2.}
 
-    \label{fig: graph}
-\end{figure}
-\begin{center}
+% Table generated by Excel2LaTeX from sheet 'Sheet1'
+\begin{table}[htbp]
+  \centering
+  \setlength{\tabcolsep}{1.5mm}{}
+  \caption{Comparative evaluation on DroneVehicle dataset (Image: 17874.jpg)}
+   \scalebox{1}{
+    \begin{tabular}{cllllllll}
+    \toprule
+          & AG    & EI    & EN    & MI    & SD    & SF    & SSIM   \\
+    \midrule
+    DDFM  & 5.00  & 109.16  & 7.33  & 1.62  & 51.16  & 9.69  & 0.82    \\
+    \midrule
+    QuadPrior  & 5.47  & 114.04  & 7.61  & 1.61  & 55.63  & 10.64  & 0.92   \\
+    \midrule
+    GSAD  & 5.33  & 116.53  & \textbf{7.62 } & 1.89  & 57.15  & 10.59  & 0.79  \\
+    \midrule
+    EMMA  & 5.83  & 126.88  & 7.48  & 1.54  & \textbf{62.09 } & 11.23  & \textbf{1.13 } \\
+     \midrule
+    \rowcolor{gray!40} Ours  & \textbf{6.09 } & \textbf{127.67 } & 7.58  & \textbf{1.92 } & 61.94  & \textbf{11.65 } & 1.10  \\
+    \bottomrule
+    \end{tabular}%
+    }
+  \label{tab:DroneVehical2}%
+\end{table}%
+
+
+% Table generated by Excel2LaTeX from sheet 'Sheet1'
+\begin{table}[htbp]
+  \centering
+  \setlength{\tabcolsep}{1.5mm}{}
+  \caption{Comparative evaluation on M3SVD dataset (Video: 0118\_1904, Frame: 00754)}
+  \scalebox{1}{
+    \begin{tabular}{clllllll}
+    \toprule
+         & AG    & EI    & EN    & MI    & SD    & SF    & SSIM   \\
+    \midrule
+    DDFM  & 2.44  & 55.82  & 6.87  & 2.14  & 53.19  & 6.28  & 1.13  \\
+    \midrule
+    QuadPrior  & 2.31  & 56.32  & 6.88  & \textbf{3.53 } & 59.55  & 6.46  & 0.95    \\
+    \midrule
+    
+    GSAD  & 2.94  & 63.02  & 6.55  & 2.12  & 52.39  & 7.15  & 1.03  \\
+    \midrule
+    EMMA  & 2.97  &63.31  & \textbf{7.35 } & 2.97  & 63.93  & 7.13  & \textbf{1.25 } \\
+    \midrule
+    \rowcolor{gray!40} Ours  & \textbf{3.07 } & \textbf{63.45 } & 7.27  & 3.44  & \textbf{64.75 } & \textbf{7.43 } & 1.19  \\
+    \bottomrule
+    \end{tabular}%
+    }
+  \label{tab:M3SVD1}%
+\end{table}%
+
+% Table generated by Excel2LaTeX from sheet 'Sheet1'
+\begin{table}[htbp]
+  \centering
+  \setlength{\tabcolsep}{1.5mm}{}
+  \caption{Comparative evaluation on M3SVD dataset (Video: 1208\_1717, Frame: 00000)}
+  \scalebox{1}{
+    \begin{tabular}{clllllll}
+    \toprule
+          & AG    & EI    & EN    & MI    & SD    & SF    & SSIM  \\
+    \midrule
+    DDFM  & 5.11  & 181.15  & 6.83  & 2.59  & 72.42  & 11.00  & 0.87    \\
+    \midrule
+    QuadPrior  & 5.17  & 215.24  & 6.92  & 2.90  & 73.33  & 11.05  & 0.73   \\
+    \midrule
+    GSAD  & 5.36  & 211.55  & 7.72  & 2.46  & 68.07  & 11.20  & 0.88  \\
+    \midrule
+    EMMA  & 5.34  & 211.09  & \textbf{7.34 } & 3.27  & 78.28  & 11.10  & 0.91  \\
+    \midrule
+    \rowcolor{gray!40} Ours  & \textbf{5.42 } & \textbf{219.72 } & 7.29  & \textbf{3.34} & \textbf{80.57 } & \textbf{11.22 } & \textbf{0.99 }   \\
+    \bottomrule
+    \end{tabular}%
+    }
+  \label{tab:M3SVD2}%
+\end{table}%
+
+\subsection{Visualization}
+Visual comparisons between HMIF and state-of-the-art methods are presented in Figures \ref{fig:DroneVehical1}, \ref{fig:DroneVehical2}, and \ref{fig:M3SVD}. The results demonstrate that our method effectively integrates thermal radiation information from infrared images with the fine structural details of visible images, while more faithfully preserving color information. Figure \ref{fig:DroneVehical1} illustrates the comparative results on samples "17605.jpg" and "17611.jpg" from the DroneVehicle dataset. Observations reveal that fusion outputs from DDFM and QuadPrior exhibit noticeable edge blurring and noise interference. Although EMMA shows improved fusion performance, its ability to preserve color fidelity remains comparatively weaker. In contrast, by incorporating the HVI adaptive brightness enhancement strategy, our model significantly enhances the color richness of the fused results while preserving finer details, leading to substantially improved visibility of target objects within the scene.
 \begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.7\textwidth]{experience}
-    \caption {Comparison of visualization results on SIRST-V2 dataset.}
-
-    \label{fig: experience}
+    \includegraphics[width=1.0\textwidth]{chapter and images/Drone1.png}
+    \caption{Comparative results for image pairs "17605.jpg" and "17611.jpg" from the DroneVehicle dataset}
+    \label{fig:DroneVehical1}
 \end{figure*}
-\end{center}
 
-% 结论
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=1.0\textwidth]{chapter and images/Drone2.png}
+    \caption{Comparative results for image pairs "17647.jpg" and "17874.jpg" from the DroneVehicle dataset}
+    \label{fig:DroneVehical2}
+\end{figure*}
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=1.0\textwidth]{chapter and images/Msvd.png}
+    \caption{Comparative results for frame 00177 (video 0118\_1904) and frame 00000 (video 1208\_1717) from the M3SVD dataset}
+    \label{fig:M3SVD}
+\end{figure*}
+
 \section{Conclusion}
-we introduce a effective Muti-scale label assign- ment(MSLA)  tactic.  The  MSLA  easily displace the standard box and point-based label task tactics in mainstream detectors. Hence, their performance on Infrared small target are facilitated. Our designed a multi-scale small target detection head, which can enhance the detecting performance of tiny objects without losing large targets. Widespread tests and analyses on SIRST-V2 dataset deeply verify the efficiency of MLSA-YOLOV8. 
-
 
 \ifCLASSOPTIONcaptionsoff
   \newpage
 \fi
+%\printbibliography
 
-% 打印引用
-\printbibliography
-
+\bibliographystyle{IEEEtranN} 
+\bibliography{reference.bib} 
 \end{document}
 
